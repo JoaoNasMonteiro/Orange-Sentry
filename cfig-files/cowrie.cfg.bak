@@ -1,0 +1,10 @@
+[telnet]
+enabled = true
+listen_endpoints = tcp:2223:interface=0.0.0.0
+
+dowload_limit_size=10485760
+
+fake_addr = 10.10.66.124
+
+
+hostname = smartdevice_192
