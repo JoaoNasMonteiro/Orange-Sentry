@@ -1,0 +1,22 @@
+# Pastas de ambiente e dependências
+.venv/
+venv/
+env/
+node_modules/
+.git/
+
+# Artefatos de compilação C (Isso é crucial)
+*.o
+*.so
+*.a
+build/
+bin/
+dist/
+
+# Arquivos de documentação ou logs
+*.md
+*.log
+*.pcap
+
+# Arquivos de Backup
+*.bak

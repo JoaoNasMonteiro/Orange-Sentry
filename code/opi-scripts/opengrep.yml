@@ -1,0 +1,32 @@
+rules:
+  # --- Regras para C (Foco em Embedded/Segurança) ---
+  # Evita buffer overflows clássicos (strcpy, gets, sprintf)
+  - id: dangerous-functions-c
+    patterns:
+      - pattern-either:
+          - pattern: strcpy(...)
+          - pattern: gets(...)
+          - pattern: sprintf(...)
+    message: "PERIGO: Função insegura de memória detectada! Use strncpy, fgets ou snprintf."
+    languages: [c]
+    severity: ERROR
+
+  # --- Regras para Python (Scripts do Honeypot) ---
+  # Detecta uso de 'exec' ou 'eval' que permitem injeção de código
+  - id: python-no-eval
+    pattern: eval(...)
+    message: "Evite usar eval(). Isso permite RCE (Remote Code Execution) no seu Honeypot."
+    languages: [python]
+    severity: WARNING
+
+  # --- Regras para Ansible (Provisionamento) ---
+  # Garante que você não está subindo chaves privadas ou senhas hardcoded
+  - id: ansible-no-secrets
+    patterns:
+      - pattern: |
+          name: ...
+          ...
+          password: "..."
+    message: "Possível senha hardcoded no Ansible. Use Ansible Vault."
+    languages: [yaml]
+    severity: ERROR
