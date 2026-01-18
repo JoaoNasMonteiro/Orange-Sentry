@@ -37,7 +37,8 @@ int a_state_pl();
 
 
 int main(){
-  current_state = STATE_CLOSED;
+  next_state = STATE_CLOSED;
+  change_state();
   int user_input;
 
   while(1){
@@ -62,7 +63,7 @@ int change_state(){
 
   current_state = next_state;
 
-  return EXIT_SUCCESS
+  return EXIT_SUCCESS;
 }
 
 int deactivate_state(uint8_t state){
