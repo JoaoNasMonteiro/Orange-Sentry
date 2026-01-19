@@ -1,5 +1,4 @@
-#ifndef ARENA_H
-#define ARENA_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
@@ -73,5 +72,3 @@ static inline void arena_reset(Arena* a){
 
 #define ARENA_NEW(a, Type) ((Type *)arena_alloc(a, sizeof(Type)))
 #define ARENA_NEW_ARRAY(a, Type, Count) ((Type *)arena_alloc(a, sizeof(Type) * (Count)))
-
-#endif

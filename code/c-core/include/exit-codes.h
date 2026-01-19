@@ -1,0 +1,6 @@
+#pragma once
+
+#define OS_EXIT_SUCCESS 0
+#define OS_EXIT_GEN_FAILURE 1
+#define OS_EXIT_MEM_ALLOC_FAILURE 2
+#define OS_EXIT_USER_INPUT_FAILURE 3

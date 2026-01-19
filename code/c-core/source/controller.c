@@ -1,13 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "/home/jjp/OrangePI_Dev/code/c-core/include/arena.h"
-
-#define EXIT_SUCCESS 0
-#define EXIT_GEN_FAILURE 1
-#define EXIT_MEM_ALLOC_FAILURE 2
-#define EXIT_USER_INPUT_FAILURE 3
-
+#include "../include/arena.h"
+#include "../include/exit_status.h"
 
 #define BUF_SIZE 64 
 
@@ -56,14 +51,14 @@ int main(){
 
 int change_state(){
   
-  if (next_state == current_state) return EXIT_SUCCESS;
+  if (next_state == current_state) return OS_EXIT_SUCCESS;
   
   deactivate_state(current_state);
   activate_state(next_state);
 
   current_state = next_state;
 
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int deactivate_state(uint8_t state){
@@ -82,29 +77,30 @@ int deactivate_state(uint8_t state){
       break;
     default:
       printf("Invalid State for Activating\n");
+      return OS_EXIT_GEN_FAILURE
   } 
 
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int d_state_closed(){
   printf("Deactivating the Closed State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int d_state_dev(){
   printf("Deactivating the Development State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int d_state_honey(){
   printf("Deactivating the Honeypot State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int d_state_pl(){
   printf("Deactivating the Passive Listen State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int activate_state(uint8_t state){
@@ -126,27 +122,27 @@ int activate_state(uint8_t state){
       break;
   }
 
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int a_state_closed(){
   printf("Activating the Closed State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int a_state_dev(){
   printf("Activating the Development State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int a_state_honey(){
   printf("Activating the Honeypot State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 int a_state_pl(){
   printf("Activating the Passive Listen State\n");
-  return EXIT_SUCCESS;
+  return OS_EXIT_SUCCESS;
 }
 
 
