@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "../include/arena.h"
-#include "../include/exit_status.h"
+#include "../../include-shr/arena.h"
+#include "../../include-shr/exit-codes.h"
 
 #define BUF_SIZE 64 
 

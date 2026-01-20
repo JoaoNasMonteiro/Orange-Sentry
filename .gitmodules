@@ -1,0 +1,6 @@
+[submodule "code/c-core/vendor/libmnl"]
+	path = code/c-core/vendor/libmnl
+	url = https://git.netfilter.org/libmnl
+[submodule "code/c-core/vendor/libnftnl"]
+	path = code/c-core/vendor/libnftnl
+	url = https://git.netfilter.org/libnftnl
