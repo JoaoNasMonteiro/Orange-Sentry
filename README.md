@@ -24,7 +24,8 @@ It is a portable, standalone security device designed to be dropped into untrust
 ## 🏗️ Architecture
 
 The system operates on two distinct planes to ensure stability under attack:
-|:---|:---|
+
+|:---|:---|:---|
 | **Control Plane** | The "Brain". Manages FSM, hardware inputs, and orchestration. | **C**, GPIO, MQTT, Arena Allocators |
 | **Enforcement Plane** | The "Muscle". Handles packet filtering and trapping. | **Nftables**, Systemd, Cowrie, Suricata |
 
