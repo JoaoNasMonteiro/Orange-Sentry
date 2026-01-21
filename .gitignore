@@ -1,7 +1,16 @@
 *.a
 *.o
+*.out
+code/c-core/bin/
+code/c-core/libs/*/build
+code/c-core/libs/*/bin
+
+*.swp
+
 
 code/display-server/.venv/
-
+code/display-server/*/__pycache__/
+*.pyc
+*.env
 
 
