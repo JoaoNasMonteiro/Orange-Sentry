@@ -4,8 +4,8 @@ CC := clang
 INCLUDE_DIR := ../../include
 BUILD_DIR := ../../build
 
-x86_CFLAGS := -std=c99 -Wall -Werror -g -I $(INCLUDE_DIR)
-arm_CFLAGS := -std=c99 -Wall -Werror -g -I $(INCLUDE_DIR) --target=aarch64-linux-gnu
+x86_CFLAGS := -std=c99 -Wall -Werror -g -I $(INCLUDE_DIR) 
+arm_CFLAGS := -std=c99 -Wall -Werror -g -I $(INCLUDE_DIR) --target=aarch64-linux-gnu 
 
 ARCH ?= x86
 
@@ -19,7 +19,8 @@ else
 	OUT_DIR := ../../bin/x86
 endif
 
-TARGET_BIN := $(OUT_DIR)/controller
+LDFLAGS := -L $(LIBS_DIR) -lfifo-ipc -lpaho-mqtt3c
+TARGET_BIN := $(OUT_DIR)/mqtt-client
 
 all: directories $(TARGET_BIN)
 .PHONY: all clean directories
@@ -29,20 +30,22 @@ directories:
 	@mkdir -p $(OUT_DIR)
 
 
-#todos os passos até o assembly
+#--- Compiling Source -----
 $(BUILD_DIR)/mqtt-client.o: main.c | directories
 	$(CC) $< $(CFLAGS) -c -o $@
 
 
-#linkagem
-$(TARGET_BIN): $(BUILD_DIR)/mqtt-client.o $(LIBS_DIR)/libfifo-ipc.a $(LIBS_DIR)/libpaho-mqtt3a.a
-	$(CC) $^ -o $@ 
-
+# --- Compiling Dependencies -----
 $(LIBS_DIR)/libfifo-ipc.a: $(BUILD_DIR)/libfifo-ipc.o
-	ar rcs libfifo-ipc.a fifo-ipc.o
+	ar rcs $(LIBS_DIR)/libfifo-ipc.a $(BUILD_DIR)/libfifo-ipc.o
 
 $(BUILD_DIR)/libfifo-ipc.o: $(INCLUDE_DIR)/fifo-ipc.c
 	$(CC) $< $(CFLAGS) -c -o $@
+
+# ----- Linking -------
+$(TARGET_BIN): $(BUILD_DIR)/mqtt-client.o $(LIBS_DIR)/libfifo-ipc.a $(LIBS_DIR)/libpaho-mqtt3c.a
+	$(CC) $^ $(LDFLAGS) -o $@ 
+
 
 clean:
 	rm -rf $(BUILD_DIR) $(OUT_DIR)

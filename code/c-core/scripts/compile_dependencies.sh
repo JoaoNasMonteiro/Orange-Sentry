@@ -30,9 +30,9 @@ if [ ! -f "$PAHO_SRC/CMakeLists.txt" ]; then
   exit 1
 fi
 
-if ! command -v arm-linux-gnueabihf-gcc &>/dev/null; then
-  echo "ERROR: The cross compiler 'arm-linux-gnueabihf-gcc' was not found."
-  echo "      Install with: sudo apt install gcc-arm-linux-gnueabihf"
+if ! command -v aarch64-linux-gnu-gcc &>/dev/null; then
+  echo "ERROR: The cross compiler 'aarch64-linux-gnu-gcc' was not found."
+  echo "      Install with: sudo apt install gcc-aarch64-linux-gnu"
   exit 1
 fi
 
@@ -70,7 +70,7 @@ build_paho() {
 
 build_paho "x86" ""
 
-build_paho "arm" "-DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc"
+build_paho "arm" "-DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc"
 
 echo -e "${BLUE}[INFO] Process completed successfully!${NC}"
 echo -e "       Don't forget to check if the libs are linking in the Makefile."
