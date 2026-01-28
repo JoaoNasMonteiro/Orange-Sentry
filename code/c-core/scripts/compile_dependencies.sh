@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT DE BUILD DE DEPENDÊNCIAS (Cross-Platform)
+# SCRIPT TO COMPILE THE BUILD DEPEDENCIES (CROSS PLATFORM) 
 # ==============================================================================
-# Este script compila as bibliotecas externas para x86 e
-# ARM, movendo os binários estáticos (.a) para a pasta libs/ organizada.
+# This script compiles external libraries for x86 and
+# ARM, moving the static binaries (.a) to the libs folder.
 #
-# Uso: ./scripts/build_dependencies.sh
+# Usage: ./scripts/build_dependencies.sh
 # ==============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-EXTERNAL_DIR="$PROJECT_ROOT/external"
+EXTERNAL_DIR="$PROJECT_ROOT/vendor"
 LIBS_DIR="$PROJECT_ROOT/libs"
 PAHO_SRC="$EXTERNAL_DIR/paho.mqtt.c"
 
@@ -21,18 +21,18 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}[INFO] Iniciando build de dependências...${NC}"
-echo "       Raiz do Projeto: $PROJECT_ROOT"
+echo -e "${BLUE}[INFO] Starting build process ...${NC}"
+echo "       Project Root: $PROJECT_ROOT"
 
 if [ ! -f "$PAHO_SRC/CMakeLists.txt" ]; then
-  echo "ERRO: O código fonte do Paho MQTT não foi encontrado em $PAHO_SRC."
-  echo "      Você rodou 'git submodule update --init --recursive'?"
+  echo "ERROR: The Paho MQTT source code was not found in $PAHO_SRC."
+  echo "       Did you run 'git submodule update --init --recursive'"?
   exit 1
 fi
 
 if ! command -v arm-linux-gnueabihf-gcc &>/dev/null; then
-  echo "ERRO: O compilador cross 'arm-linux-gnueabihf-gcc' não foi encontrado."
-  echo "      Instale com: sudo apt install gcc-arm-linux-gnueabihf"
+  echo "ERROR: The cross compiler 'arm-linux-gnueabihf-gcc' was not found."
+  echo "      Install with: sudo apt install gcc-arm-linux-gnueabihf"
   exit 1
 fi
 
@@ -42,7 +42,7 @@ build_paho() {
   local BUILD_DIR="$PAHO_SRC/build_$ARCH"
   local TARGET_LIB_DIR="$LIBS_DIR/$ARCH"
 
-  echo -e "${GREEN}[BUILD] Compilando Paho MQTT para arquitetura: $ARCH${NC}"
+  echo -e "${GREEN}[BUILD] Compiling Paho MQTT for: $ARCH${NC}"
 
   rm -rf "$BUILD_DIR"
   mkdir -p "$BUILD_DIR"
@@ -65,12 +65,12 @@ build_paho() {
 
   cp "$BUILD_DIR/src/libpaho-mqtt3c.a" "$TARGET_LIB_DIR/"
 
-  echo -e "${GREEN}[OK] Lib gerada em: $TARGET_LIB_DIR/libpaho-mqtt3c.a${NC}"
+  echo -e "${GREEN}[OK] Lib generated in: $TARGET_LIB_DIR/libpaho-mqtt3c.a${NC}"
 }
 
 build_paho "x86" ""
 
 build_paho "arm" "-DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc"
 
-echo -e "${BLUE}[INFO] Processo concluído com sucesso!${NC}"
-echo -e "       Não esqueça de verificar se as libs estão linkando no Makefile."
+echo -e "${BLUE}[INFO] Process completed successfully!${NC}"
+echo -e "       Don't forget to check if the libs are linking in the Makefile."
