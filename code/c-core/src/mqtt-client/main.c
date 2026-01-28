@@ -15,6 +15,7 @@ static uint8_t client_memory[ARENA_SIZE];
 
 //MQTT Stuff
 // TODO move the MQTT stuff into it's own function
+// TODO also need to make it work by sending the messages it recieved from the FIFO pipes
 #define ADDRESS "tcp://localhost:1883"
 #define CLIENTID "ExampleClientPub"
 #define TOPIC "MQTT Examples"
