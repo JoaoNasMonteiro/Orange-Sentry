@@ -1,51 +1,35 @@
+//  #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <errno.h>
-#include <stdbool.h>
 
-#include "exit-codes.h"
+#include "../../include/arena.h"
+#include "../../include/fifo-ipc.h"
+#include "../../vendor/paho.mqtt.c/src/MQTTClient.h"
 
-#define FIFO_NAME "/tmp/test_fifo"
+#define ARENA_SIZE (64 * 1024)
+#define LOG_FIFO_NAME "/tmp/test_fifo"
 
-int main(){
+static uint8_t client_memory[ARENA_SIZE];
 
-    printf("MQTT Client Started\n");
+int main() {
 
-    printf("Waiting for a connection");
+  // initialize memory arena and named pipe
+  Arena arena;
+  arena_init(&arena, client_memory, ARENA_SIZE);
 
-    int fd = open(FIFO_NAME, O_RDONLY);
-    if (fd == -1) {
-        perror("Error opening FIFO");
-        return OS_EXIT_GEN_FAILURE;
-    }
+  IPC_Channel mqtt_log_channel;
+  if (ipc_open_channel(&mqtt_log_channel, LOG_FIFO_NAME) == 0) {
+    perror("[Error] Failed to initialize FIFO");
+    ipc_close_channel(&mqtt_log_channel);
+    return 1;
+  }
 
-    printf("Writer connected\n");
-    
-    char buffer[256];
-    ssize_t bytesRead;
+  MQTTClient client;
 
-    while ((bytesRead = read(fd, buffer, sizeof(buffer) - 1)) > 0) {
-        buffer[bytesRead] = '\0';
-        printf("Received: %s", buffer);
-    }
+  // do mqtt stuff
 
-    if (bytesRead == -1) {
-        perror("Error reading from FIFO");
-        close(fd);
-        return OS_EXIT_GEN_FAILURE;
-    } else {
-        printf("End of file (writer closed connection)\n");
-    }
-
-    close(fd); 
-
-    printf("%s", buffer);
-
-
-    return OS_EXIT_SUCCESS;
+  // close down named pipe and reset arena
+  arena_reset(&arena);
+  ipc_close_channel(&mqtt_log_channel);
+  return 0;
 }
-
