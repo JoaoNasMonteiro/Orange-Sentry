@@ -10,6 +10,8 @@
 //Boilerplate stuff
 #define ARENA_SIZE (64 * 1024)
 #define LOG_FIFO_NAME "/tmp/test_fifo"
+#define MODULE_NAME "MQTT_CLIENT"
+#include "../../include/logging.h"
 
 static uint8_t client_memory[ARENA_SIZE];
 
@@ -23,6 +25,12 @@ static uint8_t client_memory[ARENA_SIZE];
 #define QOS 1
 #define TIMEOUT 10000L
 
+// Function prototypes
+int initialize_log_fifo(IPC_Channel *channel);
+int mqtt_initialize(MQTTClient* client, const char* address, const char* clientID);
+int mqtt_pub_message(MQTTClient client, const char* topic, const char* payload);
+int mqtt_close(MQTTClient client);
+
 
 int main() {
 
@@ -31,57 +39,94 @@ int main() {
   arena_init(&arena, client_memory, ARENA_SIZE);
 
   IPC_Channel mqtt_log_channel;
-  if (ipc_open_channel(&mqtt_log_channel, LOG_FIFO_NAME) == 0) {
-    perror("[Error] Failed to initialize FIFO");
-    ipc_close_channel(&mqtt_log_channel);
-    return 1;
-  }
+  initialize_log_fifo(&mqtt_log_channel);
 
   // do mqtt stuff
-  // First we declare and initialize the needed variables
   // client, connection options, message, delivery token, return code
   MQTTClient client;
-  MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-  MQTTClient_message pubmsg = MQTTClient_message_initializer;
-  MQTTClient_deliveryToken token;
-
-  //then we create the client based on those variables
-  int rc;
-  MQTTClient_create(&client, ADDRESS, CLIENTID, MQTTCLIENT_PERSISTENCE_NONE,NULL);
-  //set keepalive interval and clean session parameters. those are important
-  conn_opts.keepAliveInterval = 20;
-  conn_opts.cleansession = 1;
-
-  //connect to the broker
-  if (rc = MQTTClient_connect);
-
-  if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS) {
-    perror(!"[Error] Failed to connect to MQTT broker");
-    exit(EXIT_FAILURE);
+  //fail fast
+  if (mqtt_initialize(&client, ADDRESS, CLIENTID) != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("MQTT initialization failed, exiting.");
+    return -1;
+  }
+  if (mqtt_pub_message(client, TOPIC, PAYLOAD)!= MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("MQTT publish message failed, exiting.");
+    return -1;
+  }
+  if (mqtt_close(client) != 0) {
+    LOG_ERROR("MQTT client close failed, exiting.");
+    return -1;
   }
 
-  //prepare the message to be sent
-  pubmsg.payload = PAYLOAD;
-  pubmsg.payloadlen = strlen(PAYLOAD);
+  // cleanup
+  arena_reset(&arena);
+  ipc_close_channel(&mqtt_log_channel);
+  return 0;
+}
+
+int initialize_log_fifo(IPC_Channel* channel) {
+  if (ipc_open_channel(channel, LOG_FIFO_NAME) == 0) {
+    LOG_ERROR("Failed to open log FIFO at %s", LOG_FIFO_NAME);
+    return -1;
+  }
+  return 0;
+
+}
+
+// need to create the client on main, then call this with the params
+int mqtt_initialize(MQTTClient* client, const char* address, const char* clientID) {
+  int rc;
+  rc = MQTTClient_create(client, address, clientID, MQTTCLIENT_PERSISTENCE_NONE, NULL);
+  if (rc != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("Failed to create MQTT client. RC: %d", rc);
+    return rc;
+  }
+
+  MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+  conn_opts.keepAliveInterval = 20;
+  conn_opts.cleansession = 1;
+  
+  rc = MQTTClient_connect(*client, &conn_opts);
+  if (rc != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("Failed to connect to MQTT broker. RC: %d", rc);
+    return rc;
+  }
+
+  return 0;
+
+} 
+
+// need to call this with the client, topic, payload, qos, timeout
+int mqtt_pub_message(MQTTClient client, const char* topic, const char* payload){
+  
+  MQTTClient_message pubmsg = MQTTClient_message_initializer;
+  MQTTClient_deliveryToken token = 0;
+
+  pubmsg.payload = (char*)payload;
+  pubmsg.payloadlen = strlen(payload);
   pubmsg.qos = QOS;
   pubmsg.retained = 0;
 
-  //publish the message
-  MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token);
-  printf("Waiting for up to %d seconds for publication of %s\non topic %s for client with ClientID: %s\n", (int)(TIMEOUT / 1000), PAYLOAD, TOPIC, CLIENTID);
+  int rc;
+  rc = MQTTClient_publishMessage(client, topic, &pubmsg, &token);
+  if (rc != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("Failed to publish message. (token %d)RC: %d", token, rc);
+    return rc;
+  }
+  printf("Waiting for up to %d seconds for publication of %s\non topic %s\n", (int)(TIMEOUT / 1000), payload, topic);
+
   rc = MQTTClient_waitForCompletion(client, token, TIMEOUT);
-  
-  //wait for the message to be delivered
+  if (rc != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("Failed to publish message. (token %d)RC: %d", token, rc);
+    return rc;
+  }
   printf("Message with delivery token %d delivered\n", token);
   
-  //disconnect from the broker and destroy the client
+  return 0;
+}
+
+int mqtt_close(MQTTClient client) {
   MQTTClient_disconnect(client, 10000);
   MQTTClient_destroy(&client);
-
-  // end MQTT stuff
-
-  // close down named pipe and reset arena
-  arena_reset(&arena);
-  ipc_close_channel(&mqtt_log_channel);
   return 0;
 }
