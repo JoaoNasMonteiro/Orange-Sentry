@@ -7,19 +7,31 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define MODULE_NAME "fifo_ipc "
+#include "logging.h"
+
 int ipc_open_channel(IPC_Channel *channel, const char *path) {
   channel->path = path;
   if (mkfifo(path, 0666) == -1) {
-    perror("[Error] Failed to create FIFO Named Pipe");
-    return -1;
+
+    // throw error if there is an actual issue
+    if (errno != EEXIST) {
+      LOG_ERROR("Failed to create FIFO named pipe at %s", path);
+      return -1;
+    }
+
+    // if it gets here then the file already existed, so we just update the
+    chmod(path, 0666);
   }
 
   channel->fd = open(path, O_RDWR | O_NONBLOCK);
   if (channel->fd == -1) {
-    perror("[Error] Failed to open FIFO named pipe");
+    LOG_ERROR("Failed to open FIFO named pipe at %s", path);
     return -1;
   }
 
+  // TODO flush old pipe data
+  LOG_INFO("Channel opened successfully at %s", path);
   return 0;
 }
 
@@ -36,7 +48,7 @@ int ipc_read_nonblocking(IPC_Channel *channel, char *buffer, size_t max_size) {
       return 0;
     }
 
-    perror("[Error] Failed to read bytes from stream");
+    LOG_ERROR("Failed to read bytes from stream");
     return 0;
   }
 
