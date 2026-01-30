@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-# SCRIPT TO COMPILE THE BUILD DEPEDENCIES (CROSS PLATFORM) 
+# SCRIPT TO COMPILE THE BUILD DEPEDENCIES (CROSS PLATFORM)
 # ==============================================================================
 # This script compiles external libraries for x86 and
 # ARM, moving the static binaries (.a) to the libs folder.
@@ -30,11 +30,21 @@ if [ ! -f "$PAHO_SRC/CMakeLists.txt" ]; then
   exit 1
 fi
 
-if ! command -v aarch64-linux-gnu-gcc &>/dev/null; then
+if ! command -v aarch64-linux-gnu-gcc; then
   echo "ERROR: The cross compiler 'aarch64-linux-gnu-gcc' was not found."
   echo "      Install with: sudo apt install gcc-aarch64-linux-gnu"
   exit 1
 fi
+
+echo -e "${BLUE}[CLEAN] Cleaning old build artifacts${NC}"
+
+pushd "$PAHO_SRC"
+
+git checkout . 2>&1 || true
+
+git clean -fdx 2>&1 || true
+
+popd
 
 build_paho() {
   local ARCH=$1
@@ -49,7 +59,7 @@ build_paho() {
 
   mkdir -p "$TARGET_LIB_DIR"
 
-  pushd "$BUILD_DIR" >/dev/null
+  pushd "$BUILD_DIR"
 
   cmake .. \
     -DPAHO_BUILD_STATIC=TRUE \
@@ -57,11 +67,11 @@ build_paho() {
     -DPAHO_WITH_SSL=FALSE \
     -DPAHO_BUILD_TESTS=FALSE \
     -DPAHO_BUILD_SAMPLES=FALSE \
-    $CMAKE_FLAGS >/dev/null
+    $CMAKE_FLAGS
 
-  make -j$(nproc) >/dev/null
+  make -j$(nproc)
 
-  popd >/dev/null
+  popd
 
   cp "$BUILD_DIR/src/libpaho-mqtt3c.a" "$TARGET_LIB_DIR/"
 
@@ -74,3 +84,4 @@ build_paho "arm" "-DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc"
 
 echo -e "${BLUE}[INFO] Process completed successfully!${NC}"
 echo -e "       Don't forget to check if the libs are linking in the Makefile."
+
