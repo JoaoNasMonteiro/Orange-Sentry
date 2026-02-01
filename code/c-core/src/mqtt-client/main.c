@@ -1,15 +1,15 @@
-//standard includes
+// standard includes
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
 
-//shared includes
+// shared includes
 #include "../../include/arena.h"
 #include "../../include/fifo-ipc.h"
 
-//local includes
+// local includes
 #include "mqtt.h"
 
 // Boilerplate stuff
@@ -20,7 +20,6 @@ static uint8_t client_memory[ARENA_SIZE];
 
 #define MODULE_NAME "MQTT_CLIENT"
 #include "../../include/logging.h"
-
 
 // MQTT Stuff
 //  TODO also need to make it work by sending the messages it recieved from the
@@ -34,80 +33,79 @@ static uint8_t client_memory[ARENA_SIZE];
 #define QOS 1
 #define TIMEOUT 10000
 
-volatile int keepRunning = 1; 
-void intHandler(int dummy) {
-  keepRunning = 0;
-}
+volatile int keepRunning = 1;
+void intHandler(int dummy) { keepRunning = 0; }
 
 // Function prototypes
 int initialize_log_fifo(IPC_Channel *channel);
-
 
 int main() {
   signal(SIGINT, intHandler);
   signal(SIGTERM, intHandler);
 
-  //init arena
+  // init arena
   Arena arena;
   arena_init(&arena, client_memory, ARENA_SIZE);
 
-  char* charbuffer = arena_alloc(&arena, BUFFER_SIZE);
+  char *charbuffer = arena_alloc(&arena, BUFFER_SIZE);
   if (charbuffer == NULL) {
     LOG_ERROR("Failed to allocate memory from arena");
     return -1;
   }
   memset(charbuffer, 0, BUFFER_SIZE);
 
-  char* topic = arena_alloc(&arena, BUFFER_SIZE);
-  if (topic == NULL) {
+  char *payload = arena_alloc(&arena, BUFFER_SIZE);
+  if (payload == NULL) {
     LOG_ERROR("Failed to allocate memory from arena");
     return -1;
   }
-  sntrcpy(topic, TOPIC, BUFFER_SIZE - 1);
+  strncpy(payload, PAYLOAD, BUFFER_SIZE - 1);
 
-  //initialize log fifo
-  IPC_Channel log_channel;
+  // initialize log fifo
+  IPC_Channel log_channel = {0};
+  log_channel.fd = -1;
   if (initialize_log_fifo(&log_channel) != 0) {
     LOG_ERROR("Failed to initialize log FIFO pipe");
-    return -1;
+    // return -1;
   }
 
   LOG_DEBUG("Starting to read from log FIFO pipe at %s", log_channel.path);
   ipc_read_nonblocking(&log_channel, charbuffer, BUFFER_SIZE);
   LOG_INFO("Log FIFO message: %s", charbuffer);
 
-
   LOG_DEBUG("Starting MQTT Client");
 
-  mqttContext* ctx = mqtt_init(ADDRESS, CLIENTID, 20);
+  mqttContext *ctx = mqtt_init(ADDRESS, CLIENTID, 20);
 
   if (ctx == NULL) {
     LOG_ERROR("Failed to initialize MQTT client");
     return -1;
   }
 
-  ipc_read_nonblocking(&log_channel, NULL, BUFFER_SIZE); // Clear any existing messages
+  ipc_read_nonblocking(&log_channel, NULL,
+                       BUFFER_SIZE); // Clear any existing messages
 
-  while(keepRunning) {
+  while (keepRunning) {
     // Try to resolve the message from the FIFO pipe
-    int bytesRead = ipc_read_nonblocking(&log_channel, charbuffer, BUFFER_SIZE - 1);
-    if ((bytesRead > 0 ) && (charbuffer[0] != '\0')){
+    int bytesRead =
+        ipc_read_nonblocking(&log_channel, charbuffer, BUFFER_SIZE - 1);
+    if ((bytesRead > 0) && (charbuffer[0] != '\0')) {
       charbuffer[bytesRead] = '\0'; // Null-terminate the string
       LOG_INFO("Read message from FIFO: %s", charbuffer);
-      
-      sntrcpy(topic, charbuffer, BUFFER_SIZE - 1);
-      topic[bytesRead - 1] = '\0'; // Remove newline character
 
-      LOG_INFO("Updated topic to: %s", topic);
-      //change later to get a better handling of FIFO pipes
-      memset(charbuffer, 0, BUFFER_SIZE);
+      strncpy(payload, charbuffer, BUFFER_SIZE - 1);
+      payload[bytesRead - 1] = '\0'; // Remove newline character
+
+      LOG_INFO("Updated payload to: %s", payload);
+      // change later to get a better handling of FIFO pipes
+      // memset(charbuffer, 0, BUFFER_SIZE);
     }
 
-    //actually try to publish the message
-    if (mqtt_pub_message(ctx, topic, PAYLOAD) != 0) {
+    // actually try to publish the message
+    if (mqtt_pub_message(ctx, TOPIC, payload) != 0) {
       LOG_ERROR("Failed to publish message");
     } else {
-      LOG_INFO("Published message to topic %s: %s", topic, PAYLOAD);
+      LOG_INFO("Published message to topic %s: %s", TOPIC, payload);
     }
     sleep(5);
   }
@@ -128,4 +126,3 @@ int initialize_log_fifo(IPC_Channel *channel) {
   }
   return 0;
 }
-
