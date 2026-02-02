@@ -64,14 +64,14 @@ Alas, I am but learning about each one of the topics covered as I go, and becaus
 
 ### Milestone 0: Pre-Alpha (Infrastructure and Minimal Viable Product)
 
-- [x] Sprint 0: Initial setup (OS, Cowrie, Firewall rules, initial control pane mocking for validation, ETC.)
-- [x] Sprint 1: Build System, Cross-Compilation & Toolchain
+- ✅ Sprint 0: Initial setup (OS, Cowrie, Firewall rules, initial control pane mocking for validation, ETC.)
+- ✅ Sprint 1: Build System, Cross-Compilation & Toolchain
 	- Goal: Create a solid build system with GNU make that is flexible and able to handle:
     1. Vendor libraries such as Paho MQTT C Library, and
     2. Internal util libraries.
 	- Tasks:
 		- Refactor Makefile stack to acocunt for cross compilation and linking
-- [ ] Sprint 2: MQTT Connectivity and initial implementation
+- ✅ Sprint 2: MQTT Connectivity and initial implementation
 	- Goal: Implement a functional pub MQTT client using the Paho C Library and the Mosquitto Broker
 	- Tasks:
 		- Implement PUB.
@@ -85,25 +85,25 @@ Alas, I am but learning about each one of the topics covered as I go, and becaus
 			- Mock receiving commands via the MQTT sub input
 			- Implement account segregation such that the account that runs the MQTT service isn't root
 			- Implement input sanitization on the client both to parse messages to send and commands to receive (important security stuff)
-- [ ] Sprint 3: Initial hardware interaction (buttons)
+- Sprint 3: Initial hardware interaction (buttons)
   - Goal: Implement button-press detection with adequate debouncing in a kernel module. Implement some sort of manager service for the hardware implementation.
   - Tasks:
     - Make a button press change the state of the FSM
     - Make the change in the FSM state trigger a log on MQTT
     - Small refactor on the main controller such that it can orchestrate cowrie's functionality according to the FSM state
-- [ ] Sprint 4: OLED screen integration
+- Sprint 4: OLED screen integration
   - Goal: integrate an OLED screen into the program that shows the current state and some actions you can take based on the state. You can select those actions via the buttons and they will meaningfully act on the board's functionality (e.g. changing states or closing current connections within suricata)
   - Tasks:
     - Write a C program that generates the information that is going to be rendered to the screen based on the context and sends it over via a jason on FIFO pipes 
     - Write a small rendering server with python that can read the JSON information, render it appropriately to a framebuffer and send it over to a simple I2C controlled OLED screen
-- [ ] Sprint 5: Board security hardening and final controller implementation
+-  Sprint 5: Board security hardening and final controller implementation
   - Goal: make the board as secure as reasonably possible with both Linux security best practices and C Programming secuirity best practices 
     - Tasks:
       - Implement strong MAC via something like AppArmor
       - Make the production version of the board ROFS
       - Implement authentication on the MQTT client
       - Final refactoring of the controller
-- [ ] Sprint 6: Final pre-alpha review
+- Sprint 6: Final pre-alpha review
   - Goal: Make the project ready for the first alpha deliverables
   - Tasks:
     - Thorough testing of the board, including manual logic validation and automated benchmarking
