@@ -1,7 +1,6 @@
 // standard includes
 #include <signal.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -22,11 +21,8 @@ static uint8_t client_memory[ARENA_SIZE];
 #include "../../include/logging.h"
 
 // MQTT Stuff
-//  TODO also need to make it work by sending the messages it recieved from the
-//  FIFO pipes
-// -------
-// TODO Finish the pipes implementation
-#define ADDRESS "tcp://localhost:1883"
+// TODO add pub functiionality
+#define ADDRESS "tcp://192.168.0.180:1883"
 #define CLIENTID "TestClient"
 #define TOPIC "/test"
 #define PAYLOAD "Hello World!"
@@ -66,7 +62,7 @@ int main() {
   log_channel.fd = -1;
   if (initialize_log_fifo(&log_channel) != 0) {
     LOG_ERROR("Failed to initialize log FIFO pipe");
-    // return -1;
+    return -1;
   }
 
   LOG_DEBUG("Starting to read from log FIFO pipe at %s", log_channel.path);
@@ -98,14 +94,19 @@ int main() {
 
       LOG_INFO("Updated payload to: %s", payload);
       // change later to get a better handling of FIFO pipes
-      // memset(charbuffer, 0, BUFFER_SIZE);
+      memset(charbuffer, 0, BUFFER_SIZE);
+
+    } else {
+      LOG_INFO("Nothing to publish. Publishing Hello, World");
+      strncpy(payload, PAYLOAD, BUFFER_SIZE - 1);
     }
 
     // actually try to publish the message
     if (mqtt_pub_message(ctx, TOPIC, payload) != 0) {
       LOG_ERROR("Failed to publish message");
     } else {
-      LOG_INFO("Published message to topic %s: %s", TOPIC, payload);
+      LOG_INFO("Successfully published message to topic %s: %s", TOPIC,
+               payload);
     }
     sleep(5);
   }

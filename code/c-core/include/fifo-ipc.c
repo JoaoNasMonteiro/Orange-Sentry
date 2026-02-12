@@ -10,6 +10,8 @@
 #define MODULE_NAME "fifo_ipc "
 #include "logging.h"
 
+// TODO implement pubbing capabilities
+
 int ipc_open_channel(IPC_Channel *channel, const char *path) {
   channel->path = path;
   if (mkfifo(path, 0666) == -1) {
@@ -21,16 +23,17 @@ int ipc_open_channel(IPC_Channel *channel, const char *path) {
     }
 
     // if it gets here then the file already existed, so we just update the
+    LOG_INFO("File Already Exists. Trying to open");
     chmod(path, 0666);
   }
 
   channel->fd = open(path, O_RDWR | O_NONBLOCK);
   if (channel->fd == -1) {
-    LOG_ERROR("Failed to open FIFO named pipe at %s", path);
+    LOG_ERROR("Fatal error opening FIFO %s. Quitting", path);
+
     return -1;
   }
 
-  // TODO flush old pipe data
   LOG_INFO("Channel opened successfully at %s", path);
   return 0;
 }
