@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#include "../../include/arena.h"
 #include "../../vendor/paho.mqtt.c/src/MQTTClient.h"
 #include "mqtt.h"
 
@@ -11,6 +12,18 @@ enum MqttStatus {
   MQTT_CONNECTED = 1,
   MQTT_ATTEMPT_CONNECT = 2
 };
+
+// TODO estabelecer estrutura de areanas para alocar as memórias desta
+// biblioteca -> usar arenas pequenas (lifetime do programa? alocar a arena
+// aqui? não, importar arena.h e somente usar as funções para pedir arenas para
+// a main.c antes disso vou ter que impleemtar alocadores slab nela, umabacking
+// arena grande que se divide em vários slabs)
+
+// Para isso tenho que mudar minha estratégia de build. Em ves de compilar para
+// inário e linkar, posso simplemente dar include deste arquivo dentro do main
+// para evitar dependency hell, então eu poderei usar todos os recursos da
+// backing arena definida dentro da main. Para isso eu ainda vou ter que mudar a
+// lógica do arena.h substancialmente para incluir a logica de subarenas/slabs.
 
 mqttContext *mqtt_init(const char *address, const char *clientID,
                        int keepAliveInterval) {
@@ -28,6 +41,15 @@ mqttContext *mqtt_init(const char *address, const char *clientID,
                          MQTTCLIENT_PERSISTENCE_NONE, NULL);
   if (rc != MQTTCLIENT_SUCCESS) {
     LOG_ERROR("Failed to create MQTT client. RC: %d", rc);
+    free(ctx);
+    return NULL;
+  }
+
+  // Handle callbacks
+  rc = MQTTClient_setCallbacks(ctx->client, NULL, on_connection_lost,
+                               on_message_arrived, NULL);
+  if (rc != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("Failed to set callbakcs");
     free(ctx);
     return NULL;
   }
@@ -92,4 +114,12 @@ void mqtt_disconnect_and_free(mqttContext *ctx) {
 
   MQTTClient_destroy(&ctx->client);
   free(ctx);
+}
+
+int on_message_arrived(void *context, char *topicName, int topicLen,
+                       MQTTClient_message *message) {
+
+  char *payload =
+
+      LOG_INFO("Message recieved at topic %s:\n %s", topicName, payload);
 }
