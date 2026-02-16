@@ -127,3 +127,5 @@ int initialize_log_fifo(IPC_Channel *channel) {
   }
   return 0;
 }
+
+#include "mqtt.c"

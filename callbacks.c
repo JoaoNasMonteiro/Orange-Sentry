@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "../../include/arena.h"
@@ -116,26 +115,10 @@ void mqtt_disconnect_and_free(mqttContext *ctx) {
   free(ctx);
 }
 
-// sub stuff
+int on_message_arrived(void *context, char *topicName, int topicLen,
+                       MQTTClient_message *message) {
 
-volatile MQTTClient_deliveryToken deliveredtoken;
+  char *payload =
 
-void mqtt_message_delivered(void *context, MQTTClient_deliveryToken dt) {
-  LOG_INFO("Message with token value %d delivery confirmed", dt);
-  deliveredtoken = dt;
-}
-
-int mqtt_message_arrived(void *context, char *topic, int topiclen,
-                         MQTTClient_message *message) {
-  int max_payload_len = 16;
-  char payload_buffer[max_payload_len];
-  strncpy(payload_buffer, message->payload, max_payload_len - 2);
-  payload_buffer[max_payload_len - 1] = '\0';
-  printf("Message ariived at topic %s:\n %s message", topic, payload_buffer);
-  MQTTClient_freeMessage(&message);
-  MQTTClient_free(topic);
-  return 0;
-  // this is an unsafe implementation. I can also just implement everything from
-  // FIFO here to simplify stuff. I will need to figure out a way to copy the
-  // user input safely.
+      LOG_INFO("Message recieved at topic %s:\n %s", topicName, payload);
 }
