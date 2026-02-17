@@ -22,11 +22,21 @@ int ipc_open_channel(IPC_Channel *channel, const char *path);
  *   0: No message available at the moment (not and error).
  *  -1: Real read error.
  */
-int ipc_read_nonblocking(IPC_Channel *channel, char *buffer, size_t max_size);
+size_t ipc_read_nonblocking(IPC_Channel *channel, char *buffer,
+                            size_t max_size);
 
 /**
  * Closes the channel.
  */
 void ipc_close_channel(IPC_Channel *channel);
+
+/**
+ * Writes non-blocking a message on the channel.
+ * returns:
+ * >0: amount of bytes written
+ * -1: Writing error
+ */
+size_t ipc_write_nonblocking(IPC_Channel *channel, char *message,
+                             size_t messageLen);
 
 #endif

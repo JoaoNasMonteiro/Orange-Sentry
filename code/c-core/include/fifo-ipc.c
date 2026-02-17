@@ -30,7 +30,6 @@ int ipc_open_channel(IPC_Channel *channel, const char *path) {
   channel->fd = open(path, O_RDWR | O_NONBLOCK);
   if (channel->fd == -1) {
     LOG_ERROR("Fatal error opening FIFO %s. Quitting", path);
-
     return -1;
   }
 
@@ -38,12 +37,13 @@ int ipc_open_channel(IPC_Channel *channel, const char *path) {
   return 0;
 }
 
-int ipc_read_nonblocking(IPC_Channel *channel, char *buffer, size_t max_size) {
+size_t ipc_read_nonblocking(IPC_Channel *channel, char *buffer,
+                            size_t max_size) {
   ssize_t bytes = read(channel->fd, buffer, max_size - 1);
 
   if (bytes > 0) {
     buffer[bytes] = '\n';
-    return (int)bytes;
+    return bytes;
   }
 
   if (bytes == -1) {
@@ -52,10 +52,20 @@ int ipc_read_nonblocking(IPC_Channel *channel, char *buffer, size_t max_size) {
     }
 
     LOG_ERROR("Failed to read bytes from stream");
-    return 0;
+    return -1;
   }
 
   return 0;
+}
+
+size_t ipc_write_nonblocking(IPC_Channel *channel, char *message,
+                             size_t messageLen) {
+  ssize_t bytes = write(channel->fd, message, messageLen);
+  if (bytes == -1){
+    LOG_ERROR("Could not write to pipe %s", channel->path);
+    return -1;
+  
+  }
 }
 
 void ipc_close_channel(IPC_Channel *channel) {

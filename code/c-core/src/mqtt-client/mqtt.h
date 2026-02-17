@@ -1,6 +1,8 @@
 #ifndef MQTT_WRAPPER_H
 #define MQTT_WRAPPER_H
 
+#include "../../include/arena.h"
+#include "../../include/fifo-ipc.h"
 #include "../../vendor/paho.mqtt.c/src/MQTTClient.h"
 #include <stdint.h>
 
@@ -11,7 +13,17 @@
 typedef struct mqttContext {
   MQTTClient client;
   uint8_t status;
+  Slab *clientSlab;
+  IPC_Channel *subChannel;
+  IPC_Channel *pubChannel;
+  char *connAddress;
 } mqttContext;
+
+enum MqttStatus {
+  MQTT_DISCONNECTED = 0,
+  MQTT_CONNECTED = 1,
+  MQTT_ATTEMPT_CONNECT = 2
+};
 
 /* * Initializes the MQTT client, allocates memory, and connects to the broker.
  * * Returns:
@@ -20,8 +32,10 @@ typedef struct mqttContext {
  * * Example:
  * mqttContext *ctx = mqtt_init("tcp://localhost:1883", "Sensor_01", 20);
  */
-mqttContext *mqtt_init(const char *address, const char *clientID,
-                       int keepAliveInterval);
+
+mqttContext *mqtt_create(const char *address, const char *clientID,
+                         int keepAliveInterval, Arena *a, char *subP,
+                         char *pubP);
 
 /* * Publishes a message to a topic with QoS 1.
  * This function blocks until the message is delivered or a timeout occurs.
