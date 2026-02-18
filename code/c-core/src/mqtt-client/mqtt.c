@@ -115,8 +115,6 @@ void mqtt_disconnect_and_free(mqttContext *ctx) {
   free(ctx);
 }
 
-// sub stuff
-
 volatile MQTTClient_deliveryToken deliveredtoken;
 
 void mqtt_message_delivered(void *context, MQTTClient_deliveryToken dt) {
@@ -124,61 +122,29 @@ void mqtt_message_delivered(void *context, MQTTClient_deliveryToken dt) {
   deliveredtoken = dt;
 }
 
-int sentry_on_message(void *context, char *topic, int topicLen,
-                      MQTTClient_message *msg) {
-  // 1. Recupera o contexto (onde guardamos o descritor do arquivo)
+int mqtt_on_message_arrived(void *context, char *topic, int topicLen,
+                            MQTTClient_message *msg) {
   mqttContext *ctx = (mqttContext *)context;
 
-  // 2. Protocolo Interno Simplificado:
-  // Podemos enviar [Tamanho (int)][Payload (bytes)] para facilitar a leitura lá
-  // na frente. Mas para este exemplo, vamos assumir escrita direta dos dados.
-
-  // Tenta escrever no Pipe de Comandos
-  
-  //this pointer to a ponter to a struct inside a struct stuff is so cursed
   ssize_t bytes_written =
-      ipc_write_nonblocking(ctx->subChannel->fd, msg->payload, msg->payloadlen);
+      ipc_write_nonblocking(ctx->subChannel, msg->payload, msg->payloadlen);
 
   if (bytes_written < 0) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      // Cenario Crítico: O Main Controller está lento e o Pipe encheu.
-      // DECISÃO DE PROJETO: Descartamos a mensagem para salvar a conexão MQTT.
-      LOG_WARN("Buffer de comandos CHEIO! Descartando mensagem do tópico: %s",
-               topic);
+      LOG_WARN("Command buffer full. Discarding message at topic %s", topic);
     } else {
-      LOG_ERROR("Erro fatal ao escrever no Pipe: %s", strerror(errno));
+      LOG_ERROR("Fatal error writing to Pipe: %s", strerror(errno));
+      return 1;
     }
   } else {
-    LOG_DEBUG("Mensagem repassada para o Main Controller (%d bytes)",
-              (int)bytes_written);
+    LOG_DEBUG("Message successfully written to pipe %s (%d bytes)",
+              ctx->subChannel->fd, (int)bytes_written);
   }
 
-  // 3. Limpeza Obrigatória (Conforme Paho Docs)
   MQTTClient_freeMessage(&msg);
   MQTTClient_free(topic);
 
-  return 1; // 1 = Sucesso (Consome a mensagem da fila do QoS)
-}
-
-int mqtt_on_message_arrived(void *context, char *topic, int topiclen,
-                            MQTTClient_message *message) {
-  // For this operation to be non-blocking I will just pass it hhot-potato style
-  // to the main controlelr, and do any kind of validation, parsing and stuff
-  // there.
-
-  char *buffer = arena_alloc(Arena * a, size_t size);
-
-  int max_payload_len = 16;
-  char payload_buffer[max_payload_len];
-  strncpy(payload_buffer, message->payload, max_payload_len - 2);
-  payload_buffer[max_payload_len - 1] = '\0';
-  printf("Message ariived at topic %s:\n %s message", topic, payload_buffer);
-  MQTTClient_freeMessage(&message);
-  MQTTClient_free(topic);
   return 0;
-  // this is an unsafe implementation. I can also just implement everything from
-  // FIFO here to simplify stuff. I will need to figure out a way to copy the
-  // user input safely.
 }
 
 void mqtt_on_connection_lost(void *context, char *cause) {

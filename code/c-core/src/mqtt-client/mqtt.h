@@ -25,6 +25,7 @@ enum MqttStatus {
   MQTT_ATTEMPT_CONNECT = 2
 };
 
+// TODO update docs
 /* * Initializes the MQTT client, allocates memory, and connects to the broker.
  * * Returns:
  * Pointer to the new mqttContext if successful.
@@ -34,9 +35,8 @@ enum MqttStatus {
  */
 
 mqttContext *mqtt_create(const char *address, const char *clientID,
-                         int keepAliveInterval, Arena *a, char *subP,
-                         char *pubP);
-
+                         int keepAliveInterval, Arena *a, IPC_Channel *subC,
+                         IPC_Channel *pubC);
 /* * Publishes a message to a topic with QoS 1.
  * This function blocks until the message is delivered or a timeout occurs.
  * * Returns:
@@ -55,5 +55,13 @@ int mqtt_pub_message(mqttContext *ctx, const char *topic, const char *payload);
  * mqtt_disconnect_and_free(ctx);
  */
 void mqtt_disconnect_and_free(mqttContext *ctx);
+
+// TODO add docs
+void mqtt_message_delivered(void *context, MQTTClient_deliveryToken dt);
+
+int mqtt_on_message_arrived(void *context, char *topic, int topicLen,
+                            MQTTClient_message *msg);
+
+void mqtt_on_connection_lost(void *context, char *cause);
 
 #endif // MQTT_WRAPPER_H

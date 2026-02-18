@@ -1,6 +1,4 @@
 #include "fifo-ipc.h"
-#include <asm-generic/errno-base.h>
-#include <asm-generic/errno.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -61,11 +59,11 @@ size_t ipc_read_nonblocking(IPC_Channel *channel, char *buffer,
 size_t ipc_write_nonblocking(IPC_Channel *channel, char *message,
                              size_t messageLen) {
   ssize_t bytes = write(channel->fd, message, messageLen);
-  if (bytes == -1){
+  if (bytes == -1) {
     LOG_ERROR("Could not write to pipe %s", channel->path);
     return -1;
-  
   }
+  return bytes;
 }
 
 void ipc_close_channel(IPC_Channel *channel) {
