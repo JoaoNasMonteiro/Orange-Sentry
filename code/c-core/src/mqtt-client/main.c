@@ -21,7 +21,7 @@ static uint8_t client_memory[ARENA_SIZE];
 #include "../../include/logging.h"
 
 // MQTT Stuff
-// TODO add pub functiionality
+// TODO make the program configurable via config file
 #define ADDRESS "tcp://192.168.0.180:1883"
 #define CLIENTID "TestClient"
 #define TOPIC "/test"
@@ -34,6 +34,17 @@ void intHandler(int dummy) { keepRunning = 0; }
 
 // Function prototypes
 int initialize_log_fifo(IPC_Channel *channel);
+
+/* Fluxo de funcionamento:
+ * inicializar arena -> inicializar fifo pipes -> inicializar e preencher MQTT->
+ * fazer handling de erros MQTT -> Entra loop de funcionamento: lê do FIFO ->
+ * tem mensagem? se ssim envia para o destino via MQTT. Se não faz nada (ou
+ * envia keepalive, ainda tenho que ver isso) mensagem chega -> envia para o
+ * controlador via MQTT Sai do loop principal dar free nas coisas do MQTT, dar
+ * free nas arenas, retornar a memória ao OS
+ *
+ * Este será um daemon que vai rodar no background
+ * */
 
 int main() {
   signal(SIGINT, intHandler);

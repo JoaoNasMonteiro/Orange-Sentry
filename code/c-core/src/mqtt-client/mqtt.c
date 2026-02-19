@@ -8,18 +8,6 @@
 #include "../../include/fifo-ipc.h"
 #include "../../include/logging.h"
 
-// TODO estabelecer estrutura de areanas para alocar as memórias desta
-// biblioteca -> usar arenas pequenas (lifetime do programa? alocar a arena
-// aqui? não, importar arena.h e somente usar as funções para pedir arenas para
-// a main.c antes disso vou ter que impleemtar alocadores slab nela, umabacking
-// arena grande que se divide em vários slabs)
-
-// Para isso tenho que mudar minha estratégia de build. Em ves de compilar para
-// inário e linkar, posso simplemente dar include deste arquivo dentro do main
-// para evitar dependency hell, então eu poderei usar todos os recursos da
-// backing arena definida dentro da main. Para isso eu ainda vou ter que mudar a
-// lógica do arena.h substancialmente para incluir a logica de subarenas/slabs.
-
 mqttContext *mqtt_create(const char *address, const char *clientID,
                          int keepAliveInterval, Arena *a, IPC_Channel *subC,
                          IPC_Channel *pubC) {
@@ -54,7 +42,7 @@ mqttContext *mqtt_create(const char *address, const char *clientID,
   }
 
   MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-  conn_opts.keepAliveInterval = keepAliveInterval;
+  conn_opts.keepAliveInterval = 30;
   conn_opts.cleansession = 1;
 
   rc = MQTTClient_connect(ctx->client, &conn_opts);
@@ -149,4 +137,6 @@ int mqtt_on_message_arrived(void *context, char *topic, int topicLen,
 
 void mqtt_on_connection_lost(void *context, char *cause) {
   LOG_WARN("Connection lost. Cause: %s", cause);
+  mqttContext *ctx = (mqttContext *)context;
+  ctx->status = MQTT_DISCONNECTED;
 }
