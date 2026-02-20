@@ -20,7 +20,6 @@ int ipc_open_channel(IPC_Channel *channel, const char *path) {
       return -1;
     }
 
-    // if it gets here then the file already existed, so we just update the
     LOG_INFO("File Already Exists. Trying to open");
     chmod(path, 0666);
   }
@@ -40,7 +39,7 @@ size_t ipc_read_nonblocking(IPC_Channel *channel, char *buffer,
   ssize_t bytes = read(channel->fd, buffer, max_size - 1);
 
   if (bytes > 0) {
-    buffer[bytes] = '\n';
+    buffer[bytes] = '\0';
     return bytes;
   }
 
@@ -50,7 +49,7 @@ size_t ipc_read_nonblocking(IPC_Channel *channel, char *buffer,
     }
 
     LOG_ERROR("Failed to read bytes from stream");
-    return -1;
+    return 1;
   }
 
   return 0;
@@ -61,7 +60,7 @@ size_t ipc_write_nonblocking(IPC_Channel *channel, char *message,
   ssize_t bytes = write(channel->fd, message, messageLen);
   if (bytes == -1) {
     LOG_ERROR("Could not write to pipe %s", channel->path);
-    return -1;
+    return 1;
   }
   return bytes;
 }
