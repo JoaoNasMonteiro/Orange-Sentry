@@ -1,16 +1,19 @@
+#include <bits/types/struct_timeval.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
 
 #include "../../include/arena.h"
 #include "../../vendor/paho.mqtt.c/src/MQTTClient.h"
 #include "mqtt.h"
 
-#include "../../include/fifo-ipc.h"
 #include "../../include/logging.h"
+#include "../../include/sockclient.h"
 
-mqttContext *mqtt_create(const char *address, const char *clientID,
-                         int keepAliveInterval, Arena *a, IPC_Channel *subC,
-                         IPC_Channel *pubC) {
+mqttContext *mqtt_create_context(const char *address, const char *clientID,
+                                 int keepAliveInterval, Arena *a, int sock_fd) {
   int rc;
 
   mqttContext *ctx = (mqttContext *)arena_alloc(a, sizeof(mqttContext));
@@ -29,8 +32,7 @@ mqttContext *mqtt_create(const char *address, const char *clientID,
     return NULL;
   }
 
-  ctx->subChannel = subC;
-  ctx->pubChannel = pubC;
+  ctx->ipc_socket_fd = sock_fd;
 
   // Handle callbacks
   rc = MQTTClient_setCallbacks(ctx->client, NULL, mqtt_on_connection_lost,
@@ -53,7 +55,7 @@ mqttContext *mqtt_create(const char *address, const char *clientID,
     return NULL;
   }
 
-  LOG_INFO("MQTT client connected successfully to %s", address);
+  LOG_INFO("MQTT client created successfully and connected to %s", address);
   ctx->status = MQTT_CONNECTED;
   return ctx;
 }
@@ -114,25 +116,44 @@ int mqtt_on_message_arrived(void *context, char *topic, int topicLen,
                             MQTTClient_message *msg) {
   mqttContext *ctx = (mqttContext *)context;
 
-  ssize_t bytes_written =
-      ipc_write_nonblocking(ctx->subChannel, msg->payload, msg->payloadlen);
+  IPCMessage ipc_msg;
+  memset(&ipc_msg, 0, sizeof(IPCMessage));
+
+  ipc_msg.origin = MOD_MQTT;
+  ipc_msg.msgtype = MSG_EVT_MQTT_SUB_MSG;
+
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  ipc_msg.timestamp_ms =
+      (uint64_t)(tv.tv_sec) * 1000 + (uint64_t)(tv.tv_usec) / 1000;
+
+  size_t max_topic_len = sizeof(ipc_msg.payload.mqtt_sub_evt.topic) - 1;
+  size_t copy_topic_len = (topicLen > max_topic_len) ? max_topic_len : topicLen;
+
+  strncpy(ipc_msg.payload.mqtt_sub_evt.topic, topic, copy_topic_len);
+  ipc_msg.payload.mqtt_sub_evt.topic[copy_topic_len] = '\0'; // Garante o nulo
+
+  uint16_t cpylen = (msg->payloadlen > 256) ? 256 : msg->payloadlen;
+  memcpy(ipc_msg.payload.mqtt_sub_evt.data, msg->payload, cpylen);
+
+  ipc_msg.payload.mqtt_sub_evt.data_len = cpylen;
+
+  ipc_msg.payload_len = sizeof(ipc_msg.payload.mqtt_sub_evt);
+
+  int bytes_written = ipc_client_send(ctx->ipc_socket_fd, &ipc_msg);
 
   if (bytes_written < 0) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      LOG_WARN("Command buffer full. Discarding message at topic %s", topic);
-    } else {
-      LOG_ERROR("Fatal error writing to Pipe: %s", strerror(errno));
-      return 1;
-    }
+    LOG_ERROR("Failed to send message to controller");
+    return 0;
   } else {
-    LOG_DEBUG("Message successfully written to pipe %s (%d bytes)",
-              ctx->subChannel->fd, (int)bytes_written);
+    LOG_INFO("Message successfully sent to controller %d (%d bytes)",
+             ctx->ipc_socket_fd, bytes_written);
   }
 
   MQTTClient_freeMessage(&msg);
   MQTTClient_free(topic);
 
-  return 0;
+  return 1;
 }
 
 void mqtt_on_connection_lost(void *context, char *cause) {

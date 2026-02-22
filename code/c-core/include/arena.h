@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ARENA_H
+#define ARENA_H
 
 #include <assert.h>
 #include <stdbool.h>
@@ -239,3 +240,5 @@ static inline Slab *arena_acquire_slab(Arena *a, SlabStack *stack, size_t size,
 static inline void arena_release_slab(SlabStack *stack, Slab *s) {
   arena_slab_stack_push(stack, s);
 }
+
+#endif // !ARENA_H
