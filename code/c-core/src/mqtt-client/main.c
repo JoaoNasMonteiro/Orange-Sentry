@@ -1,3 +1,6 @@
+// Global defines
+#define MODULE_NAME "MQTT_CLIENT"
+
 // standard includes
 #include <signal.h>
 #include <stdint.h>
@@ -15,7 +18,6 @@
 #define BUFFER_SIZE 512
 static uint8_t client_memory[ARENA_SIZE];
 
-#define MODULE_NAME "MQTT_CLIENT"
 #include "../../include/logging.h"
 
 #define SOCK_IPC_IMPLEMENTATION
@@ -117,7 +119,7 @@ int main() {
       break;
     }
 
-    usleep(10000);
+    safe_usleep(10000);
   }
 
   LOG_DEBUG("Shutting down MQTT Client");

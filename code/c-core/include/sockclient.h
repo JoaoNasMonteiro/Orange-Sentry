@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "logging.h"
@@ -80,6 +81,7 @@ int ipc_client_connect(const char *socket_path);
 int ipc_client_send(int fd, const IPCMessage *msg);
 int ipc_client_receive(int fd, IPCMessage *msg);
 int ipc_client_disconnect(int *pfd);
+static inline void safe_usleep(uint32_t usec);
 
 #endif
 
@@ -112,7 +114,7 @@ int ipc_client_connect(const char *socket_path) {
     }
 
     retries--;
-    usleep(100000); // 100ms delay
+    safe_usleep(100000); // 100ms delay
   }
 
   LOG_ERROR("Failed to connect to server at %s after multiple attempts: %s",
@@ -189,4 +191,10 @@ int ipc_client_disconnect(int *pfd) {
   return 0;
 }
 
+static inline void safe_usleep(uint32_t usec) {
+  struct timespec ts;
+  ts.tv_sec = usec / 1000000;
+  ts.tv_nsec = (usec % 1000000) * 1000;
+  nanosleep(&ts, NULL);
+}
 #endif
