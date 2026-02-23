@@ -1,1 +1,0 @@
-[ ] - Criar build_reqs.sh para bluidar os reqs e coloca-los ans pastas certas 

@@ -35,7 +35,7 @@ mqttContext *mqtt_create_context(const char *address, const char *clientID,
   ctx->ipc_socket_fd = sock_fd;
 
   // Handle callbacks
-  rc = MQTTClient_setCallbacks(ctx->client, NULL, mqtt_on_connection_lost,
+  rc = MQTTClient_setCallbacks(ctx->client, ctx, mqtt_on_connection_lost,
                                mqtt_on_message_arrived, NULL);
   if (rc != MQTTCLIENT_SUCCESS) {
     LOG_ERROR("Failed to set callbakcs");
@@ -102,7 +102,23 @@ void mqtt_disconnect_and_free(mqttContext *ctx) {
   }
 
   MQTTClient_destroy(&ctx->client);
-  free(ctx);
+}
+
+int mqtt_subscribe(mqttContext *ctx, const char *topic, int qos) {
+  if (ctx == NULL || ctx->status != MQTT_CONNECTED) {
+    LOG_ERROR("Cannot subscribe: MQTT client is not connected");
+    return -1;
+  }
+
+  int rc = MQTTClient_subscribe(ctx->client, topic, qos);
+
+  if (rc != MQTTCLIENT_SUCCESS) {
+    LOG_ERROR("Failed to subscribe to topic %s. RC: %d", topic, rc);
+    return rc;
+  }
+
+  LOG_INFO("Successfully subscribed to topic: %s (QoS %d)", topic, qos);
+  return 0;
 }
 
 volatile MQTTClient_deliveryToken deliveredtoken;

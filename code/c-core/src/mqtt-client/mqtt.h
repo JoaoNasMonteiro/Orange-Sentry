@@ -67,4 +67,13 @@ int mqtt_on_message_arrived(void *context, char *topic, int topicLen,
  */
 void mqtt_on_connection_lost(void *context, char *cause);
 
+/* *
+ * Subscribes the client to a specific topic.
+ * Must be called AFTER a successful connection.
+ * * Returns:
+ * 0 on success.
+ * Non-zero error code if the subscription failed.
+ */
+int mqtt_subscribe(mqttContext *ctx, const char *topic, int qos);
+
 #endif // MQTT_WRAPPER_H

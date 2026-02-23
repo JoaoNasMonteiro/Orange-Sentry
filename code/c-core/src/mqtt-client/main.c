@@ -77,6 +77,8 @@ int main() {
     return -1;
   }
 
+  mqtt_subscribe(ctx, TOPIC, QOS);
+
   // Buffer allocation for reading from FIFO pipes
   char *charbuffer = arena_alloc(&arena, BUFFER_SIZE);
   if (charbuffer == NULL) {
