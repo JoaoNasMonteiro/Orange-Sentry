@@ -12,8 +12,7 @@
 #include "../../include/logging.h"
 #include "../../include/sockclient.h"
 
-mqttContext *mqtt_create_context(const char *address, const char *clientID,
-                                 int keepAliveInterval, Arena *a, int sock_fd) {
+mqttContext *mqtt_create_context(const char *address, const char *clientID, int keepAliveInterval, Arena *a, int sock_fd) {
   int rc;
 
   mqttContext *ctx = (mqttContext *)arena_alloc(a, sizeof(mqttContext));
